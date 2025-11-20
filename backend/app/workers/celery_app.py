@@ -48,6 +48,32 @@ celery_app.conf.beat_schedule = {
         'schedule': crontab(minute='*/15'),  # Every 15 minutes
         'options': {'queue': 'monitoring'},
     },
+    # RAG Embedding Tasks
+    'process-unprocessed-content': {
+        'task': 'embedding.process_all_unprocessed_content',
+        'schedule': crontab(minute='*/5'),  # Every 5 minutes
+        'options': {'queue': 'embedding'},
+    },
+    'batch-embed-pending': {
+        'task': 'embedding.batch_embed_pending',
+        'schedule': crontab(minute='*/10'),  # Every 10 minutes
+        'options': {'queue': 'embedding'},
+    },
+    'reprocess-failed-chunks': {
+        'task': 'embedding.reprocess_failed_chunks',
+        'schedule': crontab(minute='0', hour='*/2'),  # Every 2 hours
+        'options': {'queue': 'embedding'},
+    },
+    'cleanup-orphaned-chunks': {
+        'task': 'embedding.cleanup_orphaned_chunks',
+        'schedule': crontab(minute='0', hour='3'),  # Daily at 3 AM
+        'options': {'queue': 'embedding'},
+    },
+    'get-embedding-stats': {
+        'task': 'embedding.get_processing_stats',
+        'schedule': crontab(minute='*/15'),  # Every 15 minutes
+        'options': {'queue': 'monitoring'},
+    },
 }
 
 # Task routing
@@ -55,6 +81,7 @@ celery_app.conf.task_routes = {
     'youtube.*': {'queue': 'youtube'},
     'reddit.*': {'queue': 'reddit'},
     'blog.*': {'queue': 'blog'},
+    'embedding.*': {'queue': 'embedding'},
 }
 
 # Auto-discover tasks from app.tasks

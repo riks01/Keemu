@@ -25,10 +25,16 @@ This ensures that:
 
 from app.models.content import (
     Channel,
+    ContentChunk,
     ContentItem,
     ContentSourceType,
     ProcessingStatus,
     UserSubscription,
+)
+from app.models.conversation import (
+    Conversation,
+    Message,
+    MessageRole,
 )
 from app.models.user import (
     SummaryLength,
@@ -46,9 +52,14 @@ __all__ = [
     "Channel",
     "UserSubscription",
     "ContentItem",
+    "ContentChunk",
+    # Conversation models
+    "Conversation",
+    "Message",
     # Enums
     "ContentSourceType",
     "ProcessingStatus",
     "SummaryLength",
     "UpdateFrequency",
+    "MessageRole",
 ]

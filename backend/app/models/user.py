@@ -642,8 +642,8 @@ class User(BaseModel):
         "Conversation",
         back_populates="user",
         cascade="all, delete-orphan",
-        lazy="selectin",
-        order_by="desc(Conversation.last_message_at)"
+        lazy="selectin"
+        # order_by handled by query if needed
     )
     # One-to-many with Conversation
     # - One user can have many chat conversations
