@@ -221,9 +221,9 @@ VECTOR_DB_TYPE=pgvector  # or 'pinecone'
 # PINECONE_ENVIRONMENT=us-west1-gcp
 
 # Model Configuration
-EMBEDDING_MODEL=google/embeddinggemma-300m
+EMBEDDING_MODEL=ibm-granite/granite-embedding-107m-multilingual
 LLM_MODEL=claude-3-5-haiku-20241022
-EMBEDDING_DIMENSION=768  # for embeddinggemma-300m
+EMBEDDING_DIMENSION=384  # for granite-embedding-107m-multilingual
 
 # Cost/Performance Toggles
 USE_LOCAL_WHISPER=false  # true = use local Whisper (slower, free), false = use OpenAI API

@@ -190,8 +190,8 @@ async def verify_chunks(db, content_item):
             print(f"      - Embedding dimensions: {len(chunk.embedding)}")
             
             # Verify embedding dimension
-            if len(chunk.embedding) != 768:
-                print(f"      ⚠️  WARNING: Expected 768 dimensions, got {len(chunk.embedding)}")
+            if len(chunk.embedding) != 384:
+                print(f"      ⚠️  WARNING: Expected 384 dimensions, got {len(chunk.embedding)}")
                 all_valid = False
         else:
             print(f"      ❌ No embedding generated!")

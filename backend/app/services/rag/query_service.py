@@ -38,7 +38,7 @@ class QueryService:
     # Returns: {
     #     'original': 'What are React hooks?',
     #     'cleaned': 'what are react hooks',
-    #     'embedding': [0.1, 0.2, ...],  # 768-dim vector
+    #     'embedding': [0.1, 0.2, ...],  # 384-dim vector
     #     'expanded_queries': ['react hooks', 'hooks in react', ...],
     #     'intent': 'factual'
     # }
@@ -84,7 +84,7 @@ class QueryService:
             Dictionary containing:
             - original: Original query text
             - cleaned: Cleaned and normalized query
-            - embedding: Query embedding vector (768-dim)
+            - embedding: Query embedding vector (384-dim)
             - expanded_queries: List of query variations
             - intent: Query intent classification
             - tokens: Query tokens (words)

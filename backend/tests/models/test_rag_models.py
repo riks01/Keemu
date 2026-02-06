@@ -28,7 +28,7 @@ class TestContentChunkModel:
         """Test creating a content chunk with all fields."""
         # Create dependencies
         user = User(
-            email="test@example.com",
+            email="test_content_chunk@example.com",
             name="Test User",
             timezone="UTC",
             is_active=True
@@ -82,7 +82,7 @@ class TestContentChunkModel:
     async def test_content_chunk_relationship_to_content_item(self, db_session):
         """Test relationship between ContentChunk and ContentItem."""
         # Create dependencies
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_content_chunk_relationship@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -130,7 +130,7 @@ class TestContentChunkModel:
     
     async def test_content_chunk_unique_constraint(self, db_session):
         """Test that duplicate (content_item_id, chunk_index) is prevented."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_content_chunk_unique_constraint@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -174,7 +174,7 @@ class TestContentChunkModel:
     
     async def test_content_chunk_cascade_delete(self, db_session):
         """Test that deleting content item deletes its chunks."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_content_chunk_cascade_delete@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -219,7 +219,7 @@ class TestContentChunkModel:
     
     async def test_content_chunk_properties(self, db_session):
         """Test ContentChunk property methods."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_content_chunk_properties@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -270,7 +270,7 @@ class TestConversationModel:
     async def test_create_conversation(self, db_session):
         """Test creating a conversation with all fields."""
         user = User(
-            email="test@example.com",
+            email="test_conversation_create@example.com",
             name="Test User",
             timezone="UTC",
             is_active=True
@@ -303,7 +303,7 @@ class TestConversationModel:
     
     async def test_conversation_relationship_to_user(self, db_session):
         """Test relationship between Conversation and User."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_conversation_relationship_to_user@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -314,7 +314,7 @@ class TestConversationModel:
         
         # Verify forward relationship
         assert conv1.user.id == user.id
-        assert conv1.user.email == "test@example.com"
+        assert conv1.user.email == "test_conversation_relationship_to_user@example.com"
         
         # Verify reverse relationship
         await db_session.refresh(user, ['conversations'])
@@ -322,7 +322,7 @@ class TestConversationModel:
     
     async def test_conversation_cascade_delete_from_user(self, db_session):
         """Test that deleting user deletes their conversations."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_conversation_cascade_delete_from_user@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -344,7 +344,7 @@ class TestConversationModel:
     
     async def test_conversation_properties(self, db_session):
         """Test Conversation property methods."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_conversation_properties@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -381,7 +381,7 @@ class TestMessageModel:
     
     async def test_create_message(self, db_session):
         """Test creating a message with all fields."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_message_create@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -412,7 +412,7 @@ class TestMessageModel:
     
     async def test_message_relationship_to_conversation(self, db_session):
         """Test relationship between Message and Conversation."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_message_relationship_to_conversation@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -445,7 +445,7 @@ class TestMessageModel:
     
     async def test_message_cascade_delete_from_conversation(self, db_session):
         """Test that deleting conversation deletes its messages."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_message_cascade_delete_from_conversation@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -475,7 +475,7 @@ class TestMessageModel:
     
     async def test_message_properties(self, db_session):
         """Test Message property methods."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_message_properties@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -505,7 +505,7 @@ class TestMessageModel:
     async def test_message_chunk_relationship(self, db_session):
         """Test many-to-many relationship between Message and ContentChunk."""
         # Create dependencies
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_message_chunk_relationship@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -563,7 +563,7 @@ class TestMessageModel:
         assert message.retrieved_chunks[1].chunk_text == "Chunk 2"
 
 
-@pytest.mark.asyncio
+
 class TestMessageRole:
     """Test MessageRole enum."""
     

@@ -24,6 +24,7 @@ https://pytest-with-eric.com/database-testing/pytest-sql-database-testing/
 import asyncio
 from datetime import datetime, timedelta, timezone
 
+import pytest
 from sqlalchemy import Integer, select
 from sqlalchemy.exc import IntegrityError
 
@@ -41,6 +42,10 @@ from app.models.user import SummaryLength, UpdateFrequency, User, UserPreference
 # Setup logging
 setup_logging()
 logger = get_logger(__name__)
+
+# Skip all tests in this file when running with pytest
+# This file is designed to be run as a standalone script
+pytestmark = pytest.mark.skip(reason="Standalone integration script, not for pytest")
 
 
 async def test_create_channel():

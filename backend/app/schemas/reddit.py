@@ -7,7 +7,7 @@ These schemas define the request/response structures for Reddit-related operatio
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 # ========================================
@@ -201,6 +201,8 @@ class RedditSubredditInfo(BaseModel):
 class RedditSubscriptionResponse(BaseModel):
     """Response schema for a single Reddit subscription."""
     
+    model_config = ConfigDict(from_attributes=True)
+
     id: int = Field(
         ...,
         description="Subscription ID (database primary key)"
@@ -260,9 +262,6 @@ class RedditSubscriptionResponse(BaseModel):
         ...,
         description="When subscription was last modified"
     )
-    
-    class Config:
-        from_attributes = True
 
 
 class RedditSubscriptionList(BaseModel):

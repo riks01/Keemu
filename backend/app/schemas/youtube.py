@@ -7,7 +7,7 @@ These schemas define the request/response structures for YouTube-related operati
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, ConfigDict
 
 
 # ========================================
@@ -150,7 +150,11 @@ class YouTubeChannelInfo(BaseModel):
 
 class YouTubeSubscriptionResponse(BaseModel):
     """Response schema for a single subscription."""
-    
+
+    model_config = ConfigDict(
+        from_attributes=True
+        )
+
     id: int = Field(
         ...,
         description="Subscription ID (database primary key)"
@@ -196,8 +200,6 @@ class YouTubeSubscriptionResponse(BaseModel):
         description="When subscription was last modified"
     )
     
-    class Config:
-        from_attributes = True
 
 
 class YouTubeSubscriptionList(BaseModel):

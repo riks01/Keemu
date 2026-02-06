@@ -14,7 +14,7 @@
 
 **Features Implemented:**
 - ✅ Query cleaning and normalization
-- ✅ Query embedding generation (768-dim vectors)
+- ✅ Query embedding generation (384-dim vectors)
 - ✅ Query expansion for improved recall (3 strategies)
 - ✅ Intent classification (factual, exploratory, comparison, troubleshooting)
 - ✅ Batch query processing
@@ -28,7 +28,7 @@ result = await query_service.process_query("What are React hooks?")
 # Returns: {
 #     'original': 'What are React hooks?',
 #     'cleaned': 'what are react hooks',
-#     'embedding': array([...]),  # 768-dim
+#     'embedding': array([...]),  # 384-dim
 #     'expanded_queries': ['react hooks', 'hooks in react'],
 #     'intent': 'factual',
 #     'tokens': ['what', 'are', 'react', 'hooks']

@@ -7,7 +7,7 @@ to include in the main application.
 
 from fastapi import APIRouter
 
-from app.api.routes import auth, youtube, reddit, blogs
+from app.api.routes import auth, youtube, reddit, blogs, chat
 
 # Create main API router
 api_router = APIRouter()
@@ -23,6 +23,9 @@ api_router.include_router(reddit.router)
 
 # Include Blog/RSS routes
 api_router.include_router(blogs.router)
+
+# Include Chat routes
+api_router.include_router(chat.router)
 
 # Future routers will be added here:
 # api_router.include_router(users.router)

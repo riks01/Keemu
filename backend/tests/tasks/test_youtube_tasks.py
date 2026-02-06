@@ -24,7 +24,7 @@ from app.tasks.youtube_tasks import (
 # ========================================
 
 @pytest.fixture
-async def youtube_channel(db: AsyncSession, test_user):
+async def youtube_channel(db_session: AsyncSession, test_user):
     """Create a test YouTube channel."""
     channel = Channel(
         name="Test Channel",
@@ -35,14 +35,14 @@ async def youtube_channel(db: AsyncSession, test_user):
         is_active=True,
         last_fetched_at=None
     )
-    db.add(channel)
-    await db.commit()
-    await db.refresh(channel)
+    db_session.add(channel)
+    await db_session.flush()
+    await db_session.refresh(channel)
     return channel
 
 
 @pytest.fixture
-async def content_item(db: AsyncSession, youtube_channel):
+async def content_item(db_session: AsyncSession, youtube_channel):
     """Create a test content item."""
     item = ContentItem(
         channel_id=youtube_channel.id,
@@ -54,9 +54,9 @@ async def content_item(db: AsyncSession, youtube_channel):
         processing_status=ProcessingStatus.PENDING,
         content_metadata={"video_id": "test_video_123"}
     )
-    db.add(item)
-    await db.commit()
-    await db.refresh(item)
+    db_session.add(item)
+    await db_session.flush()
+    await db_session.refresh(item)
     return item
 
 
@@ -65,7 +65,7 @@ async def content_item(db: AsyncSession, youtube_channel):
 # ========================================
 
 @pytest.mark.asyncio
-async def test_fetch_youtube_channel_content_success(db: AsyncSession, youtube_channel):
+async def test_fetch_youtube_channel_content_success(db_session: AsyncSession, youtube_channel):
     """Test successful channel content fetch."""
     
     # Mock YouTube service
@@ -87,12 +87,19 @@ async def test_fetch_youtube_channel_content_success(db: AsyncSession, youtube_c
     ]
     
     with patch('app.tasks.youtube_tasks.YouTubeService') as MockYouTube, \
-         patch('app.tasks.youtube_tasks.process_youtube_video.apply_async') as mock_task:
+         patch('app.tasks.youtube_tasks.process_youtube_video.apply_async') as mock_task, \
+         patch('app.tasks.youtube_tasks.AsyncSessionLocal') as MockSession:
         
         # Setup mocks
         mock_service = MockYouTube.return_value
         mock_service.get_channel_videos = AsyncMock(return_value=mock_videos)
         mock_task.return_value = MagicMock(id='task_123')
+        
+        # Mock AsyncSessionLocal to return our test session
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__.return_value = db_session
+        mock_session_ctx.__aexit__.return_value = None
+        MockSession.return_value = mock_session_ctx
         
         # Run task
         result = fetch_youtube_channel_content(youtube_channel.id)
@@ -105,7 +112,7 @@ async def test_fetch_youtube_channel_content_success(db: AsyncSession, youtube_c
         assert len(result['processing_tasks']) == 2
         
         # Verify content items were created
-        items_result = await db.execute(
+        items_result = await db_session.execute(
             select(ContentItem).where(ContentItem.channel_id == youtube_channel.id)
         )
         items = items_result.scalars().all()
@@ -113,12 +120,12 @@ async def test_fetch_youtube_channel_content_success(db: AsyncSession, youtube_c
         assert items[0].processing_status == ProcessingStatus.PENDING
         
         # Verify channel.last_fetched_at was updated
-        await db.refresh(youtube_channel)
+        await db_session.refresh(youtube_channel)
         assert youtube_channel.last_fetched_at is not None
 
 
 @pytest.mark.asyncio
-async def test_fetch_youtube_channel_content_filters_existing(db: AsyncSession, youtube_channel):
+async def test_fetch_youtube_channel_content_filters_existing(db_session: AsyncSession, youtube_channel):
     """Test that existing videos are not re-added."""
     
     # Create existing content item
@@ -132,8 +139,8 @@ async def test_fetch_youtube_channel_content_filters_existing(db: AsyncSession, 
         processing_status=ProcessingStatus.PROCESSED,
         content_metadata={}
     )
-    db.add(existing_item)
-    await db.commit()
+    db_session.add(existing_item)
+    await db_session.flush()
     
     mock_videos = [
         {
@@ -149,11 +156,18 @@ async def test_fetch_youtube_channel_content_filters_existing(db: AsyncSession, 
     ]
     
     with patch('app.tasks.youtube_tasks.YouTubeService') as MockYouTube, \
-         patch('app.tasks.youtube_tasks.process_youtube_video.apply_async') as mock_task:
+         patch('app.tasks.youtube_tasks.process_youtube_video.apply_async') as mock_task, \
+         patch('app.tasks.youtube_tasks.AsyncSessionLocal') as MockSession:
         
         mock_service = MockYouTube.return_value
         mock_service.get_channel_videos = AsyncMock(return_value=mock_videos)
         mock_task.return_value = MagicMock(id='task_123')
+        
+        # Mock AsyncSessionLocal to return our test session
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__.return_value = db_session
+        mock_session_ctx.__aexit__.return_value = None
+        MockSession.return_value = mock_session_ctx
         
         result = fetch_youtube_channel_content(youtube_channel.id)
         
@@ -164,13 +178,20 @@ async def test_fetch_youtube_channel_content_filters_existing(db: AsyncSession, 
 
 
 @pytest.mark.asyncio
-async def test_fetch_youtube_channel_content_channel_not_found(db: AsyncSession):
+async def test_fetch_youtube_channel_content_channel_not_found(db_session: AsyncSession):
     """Test error handling when channel doesn't exist."""
     
-    result = fetch_youtube_channel_content(99999)
-    
-    assert result['success'] is False
-    assert 'not found' in result['error']
+    with patch('app.tasks.youtube_tasks.AsyncSessionLocal') as MockSession:
+        # Mock AsyncSessionLocal to return our test session
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__.return_value = db_session
+        mock_session_ctx.__aexit__.return_value = None
+        MockSession.return_value = mock_session_ctx
+        
+        result = fetch_youtube_channel_content(99999)
+        
+        assert result['success'] is False
+        assert 'not found' in result['error']
 
 
 # ========================================
@@ -178,7 +199,7 @@ async def test_fetch_youtube_channel_content_channel_not_found(db: AsyncSession)
 # ========================================
 
 @pytest.mark.asyncio
-async def test_process_youtube_video_success(db: AsyncSession, content_item):
+async def test_process_youtube_video_success(db_session: AsyncSession, content_item):
     """Test successful video processing."""
     
     mock_video_details = {
@@ -204,7 +225,8 @@ async def test_process_youtube_video_success(db: AsyncSession, content_item):
     )
     
     with patch('app.tasks.youtube_tasks.YouTubeService') as MockYouTube, \
-         patch('app.tasks.youtube_tasks.TranscriptService') as MockTranscript:
+         patch('app.tasks.youtube_tasks.TranscriptService') as MockTranscript, \
+         patch('app.tasks.youtube_tasks.AsyncSessionLocal') as MockSession:
         
         # Setup mocks
         mock_yt = MockYouTube.return_value
@@ -213,6 +235,12 @@ async def test_process_youtube_video_success(db: AsyncSession, content_item):
         mock_ts = MockTranscript.return_value
         mock_ts.get_transcript = AsyncMock(return_value=mock_transcript)
         mock_ts.calculate_transcript_quality_score = MagicMock(return_value=0.95)
+        
+        # Mock AsyncSessionLocal to return our test session
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__.return_value = db_session
+        mock_session_ctx.__aexit__.return_value = None
+        MockSession.return_value = mock_session_ctx
         
         # Run task
         result = process_youtube_video(content_item.id)
@@ -224,7 +252,7 @@ async def test_process_youtube_video_success(db: AsyncSession, content_item):
         assert result['transcript_length'] == len(mock_transcript[0])
         
         # Verify content item was updated
-        await db.refresh(content_item)
+        await db_session.refresh(content_item)
         assert content_item.processing_status == ProcessingStatus.PROCESSED
         assert content_item.content_body == mock_transcript[0]
         assert content_item.content_metadata['duration_seconds'] == 600
@@ -233,7 +261,7 @@ async def test_process_youtube_video_success(db: AsyncSession, content_item):
 
 
 @pytest.mark.asyncio
-async def test_process_youtube_video_no_transcript(db: AsyncSession, content_item):
+async def test_process_youtube_video_no_transcript(db_session: AsyncSession, content_item):
     """Test handling when transcript is not available."""
     
     mock_video_details = {
@@ -249,7 +277,8 @@ async def test_process_youtube_video_no_transcript(db: AsyncSession, content_ite
     }
     
     with patch('app.tasks.youtube_tasks.YouTubeService') as MockYouTube, \
-         patch('app.tasks.youtube_tasks.TranscriptService') as MockTranscript:
+         patch('app.tasks.youtube_tasks.TranscriptService') as MockTranscript, \
+         patch('app.tasks.youtube_tasks.AsyncSessionLocal') as MockSession:
         
         mock_yt = MockYouTube.return_value
         mock_yt.get_video_details = AsyncMock(return_value=mock_video_details)
@@ -260,13 +289,19 @@ async def test_process_youtube_video_no_transcript(db: AsyncSession, content_ite
             side_effect=NoTranscriptAvailable("No transcript")
         )
         
+        # Mock AsyncSessionLocal to return our test session
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__.return_value = db_session
+        mock_session_ctx.__aexit__.return_value = None
+        MockSession.return_value = mock_session_ctx
+        
         result = process_youtube_video(content_item.id)
         
         # Should mark as failed
         assert result['success'] is False
         assert 'transcript' in result['error'].lower()
         
-        await db.refresh(content_item)
+        await db_session.refresh(content_item)
         assert content_item.processing_status == ProcessingStatus.FAILED
         assert 'transcript' in content_item.error_message.lower()
 
@@ -276,7 +311,7 @@ async def test_process_youtube_video_no_transcript(db: AsyncSession, content_ite
 # ========================================
 
 @pytest.mark.asyncio
-async def test_fetch_all_active_channels(db: AsyncSession, youtube_channel):
+async def test_fetch_all_active_channels(db_session: AsyncSession, youtube_channel):
     """Test periodic fetch of all active channels."""
     
     # Create another channel that was fetched recently (should be skipped)
@@ -287,11 +322,19 @@ async def test_fetch_all_active_channels(db: AsyncSession, youtube_channel):
         is_active=True,
         last_fetched_at=datetime.now(timezone.utc) - timedelta(hours=2)
     )
-    db.add(recent_channel)
-    await db.commit()
+    db_session.add(recent_channel)
+    await db_session.flush()
     
-    with patch('app.tasks.youtube_tasks.fetch_youtube_channel_content.apply_async') as mock_task:
+    with patch('app.tasks.youtube_tasks.fetch_youtube_channel_content.apply_async') as mock_task, \
+         patch('app.tasks.youtube_tasks.AsyncSessionLocal') as MockSession:
+        
         mock_task.return_value = MagicMock(id='task_123')
+        
+        # Mock AsyncSessionLocal to return our test session
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__.return_value = db_session
+        mock_session_ctx.__aexit__.return_value = None
+        MockSession.return_value = mock_session_ctx
         
         result = fetch_all_active_channels()
         
@@ -307,7 +350,7 @@ async def test_fetch_all_active_channels(db: AsyncSession, youtube_channel):
 # ========================================
 
 @pytest.mark.asyncio
-async def test_refresh_channel_metadata(db: AsyncSession, youtube_channel):
+async def test_refresh_channel_metadata(db_session: AsyncSession, youtube_channel):
     """Test refreshing channel metadata from YouTube."""
     
     mock_channel_info = {
@@ -317,9 +360,17 @@ async def test_refresh_channel_metadata(db: AsyncSession, youtube_channel):
         'subscriber_count': 10000
     }
     
-    with patch('app.tasks.youtube_tasks.YouTubeService') as MockYouTube:
+    with patch('app.tasks.youtube_tasks.YouTubeService') as MockYouTube, \
+         patch('app.tasks.youtube_tasks.AsyncSessionLocal') as MockSession:
+        
         mock_service = MockYouTube.return_value
         mock_service.get_channel_by_id = AsyncMock(return_value=mock_channel_info)
+        
+        # Mock AsyncSessionLocal to return our test session
+        mock_session_ctx = AsyncMock()
+        mock_session_ctx.__aenter__.return_value = db_session
+        mock_session_ctx.__aexit__.return_value = None
+        MockSession.return_value = mock_session_ctx
         
         result = refresh_channel_metadata(youtube_channel.id)
         
@@ -327,7 +378,7 @@ async def test_refresh_channel_metadata(db: AsyncSession, youtube_channel):
         assert result['channel_id'] == youtube_channel.id
         
         # Verify channel was updated
-        await db.refresh(youtube_channel)
+        await db_session.refresh(youtube_channel)
         assert youtube_channel.name == 'Updated Channel Name'
         assert youtube_channel.description == 'Updated description'
         assert youtube_channel.thumbnail_url == 'https://example.com/new_thumb.jpg'
@@ -339,7 +390,7 @@ async def test_refresh_channel_metadata(db: AsyncSession, youtube_channel):
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_celery_task_execution(pytestconfig, db: AsyncSession, youtube_channel):
+async def test_celery_task_execution(pytestconfig, db_session: AsyncSession, youtube_channel):
     """
     Test actual Celery task execution.
     

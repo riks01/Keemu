@@ -154,7 +154,7 @@ With Phase 2 complete, the system automatically:
 
 1. ✅ **Discovers** new content items (every 5 minutes)
 2. ✅ **Chunks** content using appropriate strategies
-3. ✅ **Embeds** chunks with 768-dim vectors
+3. ✅ **Embeds** chunks with 384-dim vectors
 4. ✅ **Retries** failed embeddings (every 2 hours)
 5. ✅ **Monitors** processing stats (every 15 minutes)
 6. ✅ **Maintains** database integrity (daily cleanup)

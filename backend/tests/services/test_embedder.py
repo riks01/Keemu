@@ -43,12 +43,12 @@ class TestEmbeddingServiceBasics:
         
         # Before initialization
         dim_before = service.get_embedding_dimension()
-        assert dim_before == 768  # Default from settings
+        assert dim_before == 384  # Default from settings
         
         # After initialization
         await service.initialize()
         dim_after = service.get_embedding_dimension()
-        assert dim_after == 768  # embeddinggemma-300m dimension
+        assert dim_after == 384  # granite-embedding-107m-multilingual dimension
         
         await service.shutdown()
     
@@ -80,7 +80,7 @@ class TestSingleTextEmbedding:
         
         # Verify embedding properties
         assert isinstance(embedding, list)
-        assert len(embedding) == 768
+        assert len(embedding) == 384
         assert all(isinstance(x, float) for x in embedding)
         
         # Check that embedding is not all zeros
@@ -97,7 +97,7 @@ class TestSingleTextEmbedding:
         
         # Should return zero vector for empty text
         assert isinstance(embedding, list)
-        assert len(embedding) == 768
+        assert len(embedding) == 384
         assert all(x == 0.0 for x in embedding)
         
         await service.shutdown()
@@ -147,7 +147,7 @@ class TestBatchEmbedding:
         
         for embedding in embeddings:
             assert isinstance(embedding, list)
-            assert len(embedding) == 768
+            assert len(embedding) == 384
             assert any(x != 0.0 for x in embedding)
         
         await service.shutdown()
@@ -211,7 +211,7 @@ class TestBatchEmbedding:
         for chunk in result_chunks:
             assert "embedding" in chunk
             assert isinstance(chunk["embedding"], list)
-            assert len(chunk["embedding"]) == 768
+            assert len(chunk["embedding"]) == 384
         
         await service.shutdown()
 
@@ -358,7 +358,7 @@ class TestErrorHandling:
         # Normal embedding should work
         text = "Test text"
         embedding = await service.embed_text(text, retry_on_error=True)
-        assert len(embedding) == 768
+        assert len(embedding) == 384
         
         await service.shutdown()
     

@@ -21,7 +21,7 @@ from app.core.config import settings
 from app.models.content import ContentChunk, ContentItem, Channel, ProcessingStatus, UserSubscription
 from app.models.user import User
 from app.services.processors.text_search import TextSearchService
-
+from typing import Union
 logger = logging.getLogger(__name__)
 
 
@@ -109,7 +109,7 @@ class HybridRetriever:
         Retrieve relevant chunks using hybrid search.
         
         Args:
-            query_embedding: Query embedding vector (768-dim)
+            query_embedding: Query embedding vector (384-dim)
             query_text: Original query text for keyword search
             user_id: User ID for personalization (optional)
             top_k: Number of results to return (default: 50)
@@ -190,7 +190,7 @@ class HybridRetriever:
     
     async def _semantic_search(
         self,
-        query_embedding: np.ndarray,
+        query_embedding: Union[List[float], List[List[float]]],
         top_k: int = 100,
         content_types: Optional[List[str]] = None,
         date_range_days: Optional[int] = None,
@@ -200,7 +200,7 @@ class HybridRetriever:
         Semantic search using pgvector cosine similarity.
         
         Args:
-            query_embedding: Query embedding vector
+            query_embedding: Query embedding list of floats
             top_k: Number of results
             content_types: Filter by content types
             date_range_days: Filter by date range
@@ -224,7 +224,7 @@ class HybridRetriever:
             Channel.name.label('channel_name'),
             Channel.source_type,
             # Cosine distance (lower is better, so we'll convert to similarity)
-            ContentChunk.embedding.cosine_distance(query_embedding.tolist()).label('distance')
+            ContentChunk.embedding.cosine_distance(query_embedding).label('distance')
         ).select_from(ContentChunk).join(
             ContentItem, ContentChunk.content_item_id == ContentItem.id
         ).join(

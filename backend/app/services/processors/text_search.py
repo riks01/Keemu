@@ -61,7 +61,7 @@ class TextSearchService:
     async def generate_tsvector(
         self,
         db_session: AsyncSession,
-        text: str,
+        input_text: str,
         weight: str = "A"
     ) -> Optional[str]:
         """
@@ -75,7 +75,7 @@ class TextSearchService:
         
         Args:
             db_session: Database session
-            text: Text to convert to tsvector
+            input_text: Text to convert to tsvector
             weight: Weight for this text (A, B, C, or D)
                    A = most important (e.g., title)
                    B = important (e.g., heading)
@@ -86,16 +86,17 @@ class TextSearchService:
             tsvector string (e.g., "'amaz':3 'hook':2 'react':1")
             None if text is empty or error occurs
         """
-        if not text or not text.strip():
+        if not input_text or not input_text.strip():
             return None
         
         try:
             # Use PostgreSQL's to_tsvector function
             # setweight assigns importance weights to lexemes
+            # Note: Using f-string for weight since it must be a literal text value
             query = text(f"""
                 SELECT setweight(
                     to_tsvector(:language, :text),
-                    :weight
+                    '{weight}'
                 )::text
             """)
             
@@ -103,8 +104,7 @@ class TextSearchService:
                 query,
                 {
                     "language": self.language,
-                    "text": text,
-                    "weight": weight
+                    "text": input_text
                 }
             )
             
@@ -298,7 +298,7 @@ class TextSearchService:
             for tsvector_str in tsvectors:
                 query = text("""
                     SELECT ts_rank(
-                        :tsvector::tsvector,
+                        CAST(:tsvector AS tsvector),
                         to_tsquery(:language, :tsquery),
                         1  -- normalization: divide by document length
                     )

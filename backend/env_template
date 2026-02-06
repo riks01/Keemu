@@ -61,8 +61,8 @@ OPENAI_API_KEY=your-openai-api-key
 # ================================
 # Embedding Configuration
 # ================================
-EMBEDDING_MODEL=google/embeddinggemma-300m
-EMBEDDING_DIMENSION=768
+EMBEDDING_MODEL=ibm-granite/granite-embedding-107m-multilingual
+EMBEDDING_DIMENSION=384
 EMBEDDING_BATCH_SIZE=32
 EMBEDDING_DEVICE=cpu  # or 'cuda' if GPU available
 
@@ -123,6 +123,9 @@ SUMMARY_OVERALL_MAX_WORDS=800
 # ================================
 # Rate Limiting
 # ================================
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_ANONYMOUS=20  # Requests per minute for anonymous users
+RATE_LIMIT_AUTHENTICATED=100  # Requests per minute for authenticated users
 RATE_LIMIT_PER_MINUTE=60
 RATE_LIMIT_BURST=10
 

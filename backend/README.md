@@ -7,7 +7,7 @@ Production-ready backend for KeeMU, an AI-powered content aggregation and intell
 - **Content Collection**: Automated monitoring of YouTube channels, Reddit communities, and blogs
 - **Intelligent Processing**: RAG-powered chat interface for exploring content
 - **Smart Summarization**: AI-generated summaries using Claude Haiku 3.5
-- **Local Embeddings**: Cost-effective embeddings using google/embeddinggemma-300m
+- **Local Embeddings**: Cost-effective embeddings using ibm-granite/granite-embedding-107m-multilingual
 - **Scalable Architecture**: Async processing with Celery, Redis, and PostgreSQL
 - **Production Ready**: Docker-based deployment with health checks and monitoring
 
@@ -222,7 +222,7 @@ All configuration is managed through environment variables (see `env.template`).
 
 ### Local Embeddings
 
-Using `google/embeddinggemma-300m` saves ~$0.13 per million tokens compared to OpenAI embeddings.
+Using `ibm-granite/granite-embedding-107m-multilingual` saves ~$0.13 per million tokens compared to OpenAI embeddings.
 
 ### Batch Processing
 

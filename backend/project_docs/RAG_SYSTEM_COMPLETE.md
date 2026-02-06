@@ -24,7 +24,7 @@
 
 ### Phase 2: Content Processing ✅
 - Content-aware chunking (YouTube, Reddit, Blogs)
-- Embedding generation (google/embeddinggemma-300m)
+- Embedding generation (ibm-granite/granite-embedding-107m-multilingual)
 - Full-text search vectors
 - 6 Celery tasks for automated processing
 - Periodic scheduling with Celery Beat
@@ -51,7 +51,7 @@ User: "What are React hooks?"
          ↓
 [1] Query Processing
     - Clean & normalize
-    - Generate embedding (768-dim)
+    - Generate embedding (384-dim)
     - Expand query
     - Classify intent
          ↓

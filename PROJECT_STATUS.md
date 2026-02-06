@@ -217,7 +217,7 @@ make logs-celery
 ## 🏗️ Architecture Decisions Made
 
 ### 1. **Local Embeddings** ✅
-**Decision**: Use SentenceTransformers with `google/embeddinggemma-300m`  
+**Decision**: Use SentenceTransformers with `ibm-granite/granite-embedding-107m-multilingual`  
 **Rationale**: Saves ~$0.13 per million tokens vs OpenAI  
 **Trade-off**: Initial model download (~300MB), slightly slower
 

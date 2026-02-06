@@ -71,7 +71,7 @@ async def create_conversation(
             title=conversation_data.title
         )
         
-        return ConversationResponse.from_orm(conversation)
+        return ConversationResponse.model_validate(conversation)
         
     except Exception as e:
         logger.error(f"Error creating conversation: {e}")
@@ -110,7 +110,7 @@ async def list_conversations(
         total = await conv_service.get_conversation_count(current_user.id)
         
         return ConversationListResponse(
-            conversations=[ConversationResponse.from_orm(c) for c in conversations],
+            conversations=[ConversationResponse.model_validate(c) for c in conversations],
             total=total,
             limit=limit,
             offset=offset
@@ -154,7 +154,7 @@ async def get_conversation(
                 detail="Conversation not found"
             )
         
-        return ConversationResponse.from_orm(conversation)
+        return ConversationResponse.model_validate(conversation)
         
     except HTTPException:
         raise
@@ -251,7 +251,7 @@ async def get_messages(
             offset=offset
         )
         
-        return [MessageResponse.from_orm(m) for m in messages]
+        return [MessageResponse.model_validate(m) for m in messages]
         
     except HTTPException:
         raise

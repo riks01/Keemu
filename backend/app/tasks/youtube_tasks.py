@@ -8,10 +8,12 @@ This module contains background tasks for:
 - Channel metadata updates
 """
 
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
+import nest_asyncio
 from celery import Task
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +34,9 @@ from app.services.transcript_service import (
 )
 from app.workers.celery_app import celery_app
 
+# Apply nest_asyncio to allow nested event loops in Celery workers
+nest_asyncio.apply()
+
 logger = logging.getLogger(__name__)
 
 
@@ -39,10 +44,14 @@ logger = logging.getLogger(__name__)
 # Helper Functions
 # ========================================
 
-async def get_db() -> AsyncSession:
-    """Get database session for async tasks."""
-    async with AsyncSessionLocal() as session:
-        return session
+def run_async(coro):
+    """
+    Run async coroutine in Celery task context.
+    
+    Uses asyncio.run() with nest_asyncio applied at module level
+    to handle potential nested event loop scenarios.
+    """
+    return asyncio.run(coro)
 
 
 async def get_channel_by_id(db: AsyncSession, channel_id: int) -> Optional[Channel]:
@@ -242,7 +251,7 @@ def fetch_youtube_channel_content(self, channel_id: int) -> dict:
                 raise
     
     # Run async function
-    return asyncio.run(_fetch_content())
+    return run_async(_fetch_content())
 
 
 @celery_app.task(
@@ -391,7 +400,7 @@ def process_youtube_video(self, content_item_id: int) -> dict:
                 raise
     
     # Run async function
-    return asyncio.run(_process_video())
+    return run_async(_process_video())
 
 
 @celery_app.task(
@@ -465,7 +474,7 @@ def fetch_all_active_channels(self) -> dict:
                 logger.error(f"Error in fetch_all_active_channels: {e}", exc_info=True)
                 raise
     
-    return asyncio.run(_fetch_all())
+    return run_async(_fetch_all())
 
 
 @celery_app.task(
@@ -529,7 +538,7 @@ def refresh_channel_metadata(self, channel_id: int) -> dict:
                 await db.rollback()
                 raise
     
-    return asyncio.run(_refresh_metadata())
+    return run_async(_refresh_metadata())
 
 
 # ========================================
@@ -569,5 +578,5 @@ def get_processing_stats() -> dict:
                 'total': sum(status_counts.values())
             }
     
-    return asyncio.run(_get_stats())
+    return run_async(_get_stats())
 

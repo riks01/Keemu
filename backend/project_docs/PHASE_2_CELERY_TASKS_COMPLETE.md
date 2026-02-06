@@ -329,7 +329,7 @@ for pattern, config in routes.items():
 | Data Models | ✅ | ContentChunk, Conversation, Message |
 | Database Schema | ✅ | HNSW indexes, GIN indexes, triggers |
 | Chunking Service | ✅ | Content-type specific strategies |
-| Embedding Service | ✅ | 768-dim embeddings, batch processing |
+| Embedding Service | ✅ | 384-dim embeddings, batch processing |
 | Text Search | ✅ | PostgreSQL tsvector, weighted ranking |
 | Celery Tasks | ✅ | 6 tasks for processing and monitoring |
 | Beat Schedule | ✅ | Automatic periodic execution |

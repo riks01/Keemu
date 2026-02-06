@@ -268,7 +268,7 @@ make logs-api
 make shell
 
 # Inside container:
-python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('google/embeddinggemma-300m')"
+python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('ibm-granite/granite-embedding-107m-multilingual')"
 ```
 
 ## Next Steps

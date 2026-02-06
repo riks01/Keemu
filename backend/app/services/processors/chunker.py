@@ -659,6 +659,36 @@ class ContentChunker:
         for sentence in sentences:
             sentence_tokens = self.count_tokens(sentence)
             
+            # If single sentence exceeds chunk_size, use recursive chunking
+            if sentence_tokens > self.chunk_size:
+                # Save current chunk if not empty
+                if current_chunk:
+                    chunk_text = " ".join(current_chunk)
+                    chunks.append({
+                        "index": len(chunks),
+                        "text": chunk_text,
+                        "metadata": {
+                            "sentence_count": len(current_chunk),
+                            **metadata
+                        }
+                    })
+                    current_chunk = []
+                    current_tokens = 0
+                
+                # Use recursive chunking for oversized sentence
+                sub_chunks = self._recursive_char_chunking(sentence, self.chunk_size)
+                for sub_chunk in sub_chunks:
+                    chunks.append({
+                        "index": len(chunks),
+                        "text": sub_chunk,
+                        "metadata": {
+                            "sentence_count": 1,
+                            "oversized_split": True,
+                            **metadata
+                        }
+                    })
+                continue
+            
             # Check if we need to start a new chunk
             if current_tokens + sentence_tokens > self.chunk_size and current_chunk:
                 # Save current chunk
@@ -728,29 +758,61 @@ class ContentChunker:
             
             para_tokens = self.count_tokens(para)
             
-            # Check if we need to start a new chunk
-            if current_tokens + para_tokens > self.chunk_size and current_chunk:
-                # Save current chunk
-                chunk_text = "\n\n".join(current_chunk)
-                chunks.append({
-                    "index": len(chunks),
-                    "text": chunk_text,
-                    "metadata": {
-                        "paragraph_indices": para_indices.copy(),
-                        "paragraph_count": len(current_chunk),
-                        **metadata
-                    }
-                })
+            # If paragraph itself exceeds chunk_size, use recursive chunking
+            if para_tokens > self.chunk_size:
+                # Save current chunk if not empty
+                if current_chunk:
+                    chunk_text = "\n\n".join(current_chunk)
+                    chunks.append({
+                        "index": len(chunks),
+                        "text": chunk_text,
+                        "metadata": {
+                            "paragraph_indices": para_indices.copy(),
+                            "paragraph_count": len(current_chunk),
+                            **metadata
+                        }
+                    })
+                    current_chunk = []
+                    current_tokens = 0
+                    para_indices = []
                 
-                # Start new chunk
-                current_chunk = []
-                current_tokens = 0
-                para_indices = []
-            
-            # Add paragraph
-            current_chunk.append(para)
-            current_tokens += para_tokens
-            para_indices.append(i)
+                # Use recursive chunking for oversized paragraph
+                sub_chunks = self._recursive_char_chunking(para, self.chunk_size)
+                for sub_chunk in sub_chunks:
+                    chunks.append({
+                        "index": len(chunks),
+                        "text": sub_chunk,
+                        "metadata": {
+                            "paragraph_indices": [i],
+                            "paragraph_count": 1,
+                            "oversized_split": True,  # Flag that this was split
+                            **metadata
+                        }
+                    })
+            else:
+                # Check if we need to start a new chunk
+                if current_tokens + para_tokens > self.chunk_size and current_chunk:
+                    # Save current chunk
+                    chunk_text = "\n\n".join(current_chunk)
+                    chunks.append({
+                        "index": len(chunks),
+                        "text": chunk_text,
+                        "metadata": {
+                            "paragraph_indices": para_indices.copy(),
+                            "paragraph_count": len(current_chunk),
+                            **metadata
+                        }
+                    })
+                    
+                    # Start new chunk
+                    current_chunk = []
+                    current_tokens = 0
+                    para_indices = []
+                
+                # Add paragraph
+                current_chunk.append(para)
+                current_tokens += para_tokens
+                para_indices.append(i)
         
         # Add final chunk
         if current_chunk:
@@ -766,6 +828,156 @@ class ContentChunker:
             })
         
         return chunks
+    
+    def _split_into_sentences(self, text: str) -> list[str]:
+        """
+        Split text into sentences using basic heuristics.
+        
+        Args:
+            text: Text to split
+            
+        Returns:
+            List of sentences
+        """
+        import re
+        
+        # Split on sentence boundaries (., !, ?)
+        # Keep the punctuation with the sentence
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        
+        # Filter out empty sentences
+        return [s.strip() for s in sentences if s.strip()]
+    
+    def _recursive_char_chunking(
+        self,
+        text: str,
+        max_tokens: int = None
+    ) -> list[str]:
+        """
+        Recursively split text into chunks that respect token limits.
+        This is the bulletproof fallback that handles ALL edge cases.
+        
+        Strategy:
+        1. If text fits in max_tokens, return it
+        2. Try splitting on sentence boundaries (. ! ?)
+        3. If sentences too long, try splitting on word boundaries
+        4. If words too long, split on character boundaries
+        
+        Args:
+            text: Text to split
+            max_tokens: Maximum tokens per chunk (defaults to chunk_size)
+            
+        Returns:
+            List of text chunks, each guaranteed to be <= max_tokens
+        """
+        if max_tokens is None:
+            max_tokens = self.chunk_size
+        
+        text = text.strip()
+        if not text:
+            return []
+        
+        # Base case: text fits within limit
+        text_tokens = self.count_tokens(text)
+        if text_tokens <= max_tokens:
+            return [text]
+        
+        chunks = []
+        
+        # Strategy 1: Try splitting on sentence boundaries
+        sentences = self._split_into_sentences(text)
+        if len(sentences) > 1:
+            current_chunk = []
+            current_tokens = 0
+            
+            for sentence in sentences:
+                sentence_tokens = self.count_tokens(sentence)
+                
+                # If single sentence exceeds limit, recursively split it
+                if sentence_tokens > max_tokens:
+                    # Save current chunk if not empty
+                    if current_chunk:
+                        chunks.append(" ".join(current_chunk))
+                        current_chunk = []
+                        current_tokens = 0
+                    
+                    # Recursively split the oversized sentence
+                    sub_chunks = self._recursive_char_chunking(sentence, max_tokens)
+                    chunks.extend(sub_chunks)
+                    continue
+                
+                # Check if adding this sentence would exceed limit
+                if current_tokens + sentence_tokens > max_tokens and current_chunk:
+                    chunks.append(" ".join(current_chunk))
+                    current_chunk = []
+                    current_tokens = 0
+                
+                current_chunk.append(sentence)
+                current_tokens += sentence_tokens
+            
+            # Add final chunk
+            if current_chunk:
+                chunks.append(" ".join(current_chunk))
+            
+            return chunks
+        
+        # Strategy 2: No sentence boundaries, try splitting on word boundaries
+        words = text.split()
+        if len(words) > 1:
+            current_chunk = []
+            current_tokens = 0
+            
+            for word in words:
+                word_tokens = self.count_tokens(word)
+                
+                # If single word exceeds limit, split by characters
+                if word_tokens > max_tokens:
+                    # Save current chunk if not empty
+                    if current_chunk:
+                        chunks.append(" ".join(current_chunk))
+                        current_chunk = []
+                        current_tokens = 0
+                    
+                    # Recursively split the oversized word
+                    sub_chunks = self._recursive_char_chunking(word, max_tokens)
+                    chunks.extend(sub_chunks)
+                    continue
+                
+                # Check if adding this word would exceed limit
+                if current_tokens + word_tokens > max_tokens and current_chunk:
+                    chunks.append(" ".join(current_chunk))
+                    current_chunk = []
+                    current_tokens = 0
+                
+                current_chunk.append(word)
+                current_tokens += word_tokens
+            
+            # Add final chunk
+            if current_chunk:
+                chunks.append(" ".join(current_chunk))
+            
+            return chunks
+        
+        # Strategy 3: Single long word or no spaces, split by character
+        # This is the absolute fallback - split by half
+        mid = len(text) // 2
+        
+        # Try to find a good split point near the middle
+        # Look for space, punctuation, or any separator
+        for offset in range(min(50, mid)):
+            for char in [' ', '.', ',', ';', ':', '-', '\n']:
+                if text[mid + offset] == char:
+                    mid = mid + offset + 1
+                    break
+                elif mid - offset > 0 and text[mid - offset] == char:
+                    mid = mid - offset + 1
+                    break
+        
+        # Recursively split both halves
+        left_chunks = self._recursive_char_chunking(text[:mid], max_tokens)
+        right_chunks = self._recursive_char_chunking(text[mid:], max_tokens)
+        
+        return left_chunks + right_chunks
 
 
 # ========================================

@@ -17,7 +17,7 @@ result = await query_service.process_query("What are React hooks?")
 # Returns: {
 #     'original': 'What are React hooks?',
 #     'cleaned': 'what are react hooks',
-#     'embedding': array([...]),  # 768-dim
+#     'embedding': array([...]),  # 384-dim
 #     'expanded_queries': ['react hooks', ...],
 #     'intent': 'factual',
 #     'tokens': ['what', 'are', 'react', 'hooks']

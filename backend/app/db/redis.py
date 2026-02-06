@@ -203,3 +203,24 @@ class RedisRateLimiter:
         rate_key = f"rate_limit:{key}"
         await self.redis.delete(rate_key)
 
+
+# ========================================
+# Health Check
+# ========================================
+
+async def check_redis_health() -> bool:
+    """
+    Check if Redis is healthy and responsive.
+    
+    Returns:
+        bool: True if Redis is healthy, False otherwise
+    """
+    try:
+        redis = await get_redis()
+        # Try to ping Redis
+        response = await redis.ping()
+        return response is True
+    except Exception as e:
+        logger.error(f"Redis health check failed: {e}")
+        return False
+

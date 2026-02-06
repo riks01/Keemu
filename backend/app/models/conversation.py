@@ -363,7 +363,10 @@ class Conversation(BaseModel):
     @property
     def is_ongoing(self) -> bool:
         """Check if conversation is active and not archived."""
-        return self.is_active and not self.archived
+        # Handle None values with defaults (True for is_active, False for archived)
+        is_active = self.is_active if self.is_active is not None else True
+        archived = self.archived if self.archived is not None else False
+        return is_active and not archived
 
 
 # ================================

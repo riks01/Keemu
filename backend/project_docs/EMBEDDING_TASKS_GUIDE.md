@@ -205,8 +205,8 @@ CHUNK_OVERLAP_TOKENS=100
 MAX_CHUNKS_PER_CONTENT=50
 
 # Embedding Configuration
-EMBEDDING_MODEL="google/embeddinggemma-300m"
-EMBEDDING_DIMENSION=768
+EMBEDDING_MODEL="ibm-granite/granite-embedding-107m-multilingual"
+EMBEDDING_DIMENSION=384
 EMBEDDING_BATCH_SIZE=32
 EMBEDDING_DEVICE="cpu"  # or "cuda" or "mps"
 ```

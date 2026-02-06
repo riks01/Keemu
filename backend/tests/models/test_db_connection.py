@@ -13,6 +13,7 @@ Usage:
 
 import asyncio
 
+import pytest
 from sqlalchemy import text
 
 from app.core.logging import get_logger, setup_logging
@@ -23,6 +24,7 @@ setup_logging()
 logger = get_logger(__name__)
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_db_connection.py")
 async def test_connection():
     """Test basic database connectivity."""
     print("\n" + "="*60)
@@ -117,6 +119,7 @@ async def test_connection():
     return True
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_db_connection.py")
 async def test_concurrent_query(query_id: int) -> bool:
     """Test concurrent database access."""
     try:

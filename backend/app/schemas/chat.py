@@ -70,7 +70,9 @@ class MessageResponse(BaseModel):
     content: str = Field(description="Message content")
     metadata: Optional[Dict[str, Any]] = Field(
         default=None,
-        description="Message metadata (sources, model, etc.)"
+        description="Message metadata (sources, model, etc.)",
+        alias="message_metadata",
+        validation_alias="message_metadata"
     )
     created_at: datetime = Field(description="Creation timestamp")
 

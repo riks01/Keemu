@@ -104,7 +104,9 @@ class TestRegistration:
         data = response.json()
         assert "user" in data
         assert "access_token" in data
+        assert "token_type" in data
         assert data["user"]["email"] == sample_user_data["email"]
+        assert data["user"]["name"] == sample_user_data["name"]
         assert data["token_type"] == "bearer"
     
     async def test_register_duplicate_email(
@@ -290,7 +292,6 @@ class TestAuthHealthCheck:
 # JWT Token Tests
 # ================================
 
-@pytest.mark.asyncio
 class TestJWTTokens:
     """Test JWT token creation and validation."""
     

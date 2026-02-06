@@ -29,7 +29,7 @@ Implementing a comprehensive RAG (Retrieval-Augmented Generation) system for Kee
 - `chunk_index` - Order within content (0-indexed)
 - `chunk_text` - The actual chunk content (TEXT)
 - `chunk_metadata` - Content-type specific metadata (JSONB)
-- `embedding` - 768-dimensional vector for semantic search
+- `embedding` - 384-dimensional vector for semantic search
 - `text_search_vector` - tsvector for keyword search (added in migration)
 - `processing_status` - pending, processing, processed, failed
 
@@ -107,7 +107,7 @@ Implementing a comprehensive RAG (Retrieval-Augmented Generation) system for Kee
 **Migration Features:**
 - ✅ Enables pgvector extension
 - ✅ Creates all 4 tables (content_chunks, conversations, messages, message_chunks)
-- ✅ Adds vector(768) column for embeddings
+- ✅ Adds vector(384) column for embeddings
 - ✅ Adds tsvector column for full-text search
 - ✅ Creates HNSW index for fast vector similarity search
   - HNSW (Hierarchical Navigable Small World) - Better than IVFFlat
@@ -251,8 +251,8 @@ MAX_CHUNKS_PER_CONTENT = 50
 
 **File:** `app/services/processors/embedder.py`
 
-**Model:** google/embeddinggemma-300m
-- 768 dimensions
+**Model:** ibm-granite/granite-embedding-107m-multilingual
+- 384 dimensions
 - Optimized for semantic search
 - Local inference (no API costs)
 - Good balance of speed and quality
@@ -488,8 +488,8 @@ CHUNK_OVERLAP_TOKENS: int = 100
 MAX_CHUNKS_PER_CONTENT: int = 50
 
 # Embedding Configuration (already exists)
-EMBEDDING_MODEL: str = "google/embeddinggemma-300m"
-EMBEDDING_DIMENSION: int = 768
+EMBEDDING_MODEL: str = "ibm-granite/granite-embedding-107m-multilingual"
+EMBEDDING_DIMENSION: int = 384
 EMBEDDING_BATCH_SIZE: int = 32
 EMBEDDING_DEVICE: Literal["cpu", "cuda", "mps"] = "cpu"
 ```
@@ -825,7 +825,7 @@ Save to DB → Return Answer + Sources
 
 ### Technology Choices
 - ✅ HNSW index (modern, better than IVFFlat)
-- ✅ google/embeddinggemma-300m (free, local, quality)
+- ✅ ibm-granite/granite-embedding-107m-multilingual (free, local, quality)
 - ✅ PostgreSQL full-text search (built-in, efficient)
 - ✅ Hybrid search architecture (best of both worlds)
 
@@ -846,7 +846,7 @@ Save to DB → Return Answer + Sources
 - **Data models** - ContentChunk, Conversation, Message with relationships
 - **Database schema** - HNSW vector indexes, GIN full-text search indexes
 - **Chunking pipeline** - Content-type specific strategies (YouTube, Reddit, Blogs)
-- **Embedding service** - 768-dim embeddings with batch processing
+- **Embedding service** - 384-dim embeddings with batch processing
 - **Text search** - PostgreSQL tsvector with weighted ranking
 - **Celery tasks** - Automated chunking and embedding with monitoring
 - **Periodic scheduling** - Beat schedules for continuous processing

@@ -19,6 +19,7 @@ Or inside Docker:
 import asyncio
 from datetime import date, datetime, timezone
 
+import pytest
 from sqlalchemy import select
 
 from app.core.logging import get_logger, setup_logging
@@ -35,6 +36,7 @@ setup_logging()
 logger = get_logger(__name__)
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_user_models.py")
 async def test_create_user():
     """Test creating a new user with preferences."""
     print("\n" + "="*60)
@@ -91,6 +93,7 @@ async def test_create_user():
             raise
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_user_models.py")
 async def test_query_user(user_id: int):
     """Test querying a user and accessing preferences via relationship."""
     print("\n" + "="*60)
@@ -124,6 +127,7 @@ async def test_query_user(user_id: int):
             raise
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_user_models.py")
 async def test_update_user(user_id: int):
     """Test updating user data."""
     print("\n" + "="*60)
@@ -160,6 +164,7 @@ async def test_update_user(user_id: int):
             raise
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_user_models.py")
 async def test_update_preferences(user_id: int):
     """Test updating user preferences."""
     print("\n" + "="*60)
@@ -197,6 +202,7 @@ async def test_update_preferences(user_id: int):
             raise
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_user_models.py")
 async def test_query_by_email():
     """Test querying user by email (demonstrates index usage)."""
     print("\n" + "="*60)
@@ -224,6 +230,7 @@ async def test_query_by_email():
             raise
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_user_models.py")
 async def test_cascade_delete(user_id: int):
     """Test cascade delete - deleting user should delete preferences too."""
     print("\n" + "="*60)
@@ -263,6 +270,7 @@ async def test_cascade_delete(user_id: int):
             raise
 
 
+@pytest.mark.skip(reason="Standalone integration script, not a pytest test. Run with: python test_user_models.py")
 async def test_enum_validation():
     """Test that enum validation works."""
     print("\n" + "="*60)

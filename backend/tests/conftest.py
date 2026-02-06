@@ -32,90 +32,70 @@ from app.models.user import SummaryLength, UpdateFrequency, User, UserPreference
 # Pytest Configuration
 # ================================
 
-@pytest.fixture(scope="session")
-def event_loop() -> Generator:
-    """
-    Create an event loop for the test session.
-    
-    This fixture ensures all async tests use the same event loop.
-    Required for pytest-asyncio.
-    """
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
 
 # ================================
 # Database Fixtures
 # ================================
 
-@pytest_asyncio.fixture(scope="session")
-async def test_engine():
-    """
-    Create a test database engine.
-    
-    Uses the same database as development but isolated tables.
-    For production testing, use a separate test database.
-    
-    NullPool disables connection pooling for tests.
-    """
-    engine = create_async_engine(
-        settings.DATABASE_URL,
-        poolclass=NullPool,  # Disable pooling for tests
-        echo=False,  # Set to True for SQL debugging
-    )
-    
-    # Create all tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
-    yield engine
-    
-    # Drop all tables after tests
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    
-    await engine.dispose()
+# Database tables should already exist from migrations
+# Tests use transaction rollback for isolation
 
 
-@pytest_asyncio.fixture
-async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
+@pytest_asyncio.fixture(scope="function")
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Create a database session for each test.
     
     Each test gets a fresh session with transaction that is rolled back after test.
     This ensures test isolation without actually committing changes.
     
-    Pattern from: https://pytest-with-eric.com/api-testing/pytest-flask-postgresql-testing/
+    Key points:
+    - scope="function" ensures each test gets a fresh session
+    - Transaction is rolled back after test, so no data persists
+    - Use flush() in tests, not commit(), to keep transaction open
     """
-    # Create connection
-    connection = await test_engine.connect()
+    engine = create_async_engine(
+        settings.DATABASE_URL,
+        poolclass=NullPool,
+        echo=False,
+    )
     
-    # Begin outer transaction
+    # Create connection
+    connection = await engine.connect()
+    
+    # Begin transaction
     transaction = await connection.begin()
     
     # Create session bound to connection
-    async_session = sessionmaker(
+    SessionLocal = sessionmaker(
         bind=connection,
         class_=AsyncSession,
         expire_on_commit=False,
     )
     
-    async with async_session() as session:
-        # Begin nested transaction
-        nested = await connection.begin_nested()
-        
-        yield session
-        
-        # Rollback nested transaction
-        if nested.is_active:
-            await nested.rollback()
-        
-    # Rollback outer transaction
-    await transaction.rollback()
+    session = SessionLocal()
     
-    # Close connection
-    await connection.close()
+    yield session
+    
+    # Cleanup: Close session and rollback transaction
+    try:
+        await session.close()
+    except Exception:
+        pass
+    
+    try:
+        if transaction.is_active:
+            await transaction.rollback()
+    except Exception:
+        pass
+    
+    try:
+        await connection.close()
+    except Exception:
+        pass
+    
+    # Dispose engine with proper cleanup
+    await engine.dispose()
 
 
 # ================================
@@ -134,13 +114,15 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
             response = await client.get("/api/v1/endpoint")
             assert response.status_code == 200
     """
+    from httpx import ASGITransport
+    
     # Override database dependency
     async def override_get_db():
         yield db_session
     
     app.dependency_overrides[get_db] = override_get_db
     
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
     
     # Clean up
@@ -179,7 +161,7 @@ async def test_user(db_session: AsyncSession) -> User:
         email_notifications_enabled=True
     )
     db_session.add(preferences)
-    await db_session.commit()
+    await db_session.flush()  # Use flush instead of commit to keep transaction open
     await db_session.refresh(user)
     
     return user
@@ -212,7 +194,7 @@ async def inactive_user(db_session: AsyncSession) -> User:
         email_notifications_enabled=True
     )
     db_session.add(preferences)
-    await db_session.commit()
+    await db_session.flush()  # Use flush instead of commit to keep transaction open
     await db_session.refresh(user)
     
     return user
@@ -222,8 +204,8 @@ async def inactive_user(db_session: AsyncSession) -> User:
 # Authentication Fixtures
 # ================================
 
-@pytest.fixture
-def auth_headers(test_user: User) -> dict[str, str]:
+@pytest_asyncio.fixture
+async def auth_headers(test_user: User) -> dict[str, str]:
     """
     Create authentication headers with JWT token.
     

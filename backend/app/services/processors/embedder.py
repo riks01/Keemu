@@ -4,8 +4,8 @@ Embedding Service
 This module provides embedding generation using sentence-transformers.
 Optimized for local inference with batch processing support.
 
-Model: google/embeddinggemma-300m
-- 768 dimensions
+Model: ibm-granite/granite-embedding-107m-multilingual
+- 384 dimensions
 - Optimized for semantic search
 - Good balance of speed and quality
 - Free (no API costs)
@@ -37,7 +37,7 @@ class EmbeddingService:
     """
     Service for generating embeddings using sentence-transformers.
     
-    This service uses google/embeddinggemma-300m for generating 768-dimensional
+    This service uses ibm-granite/granite-embedding-107m-multilingual for generating 384-dimensional
     embeddings optimized for semantic search and RAG applications.
     
     Features:
@@ -140,7 +140,7 @@ class EmbeddingService:
         Get the embedding dimension of the model.
         
         Returns:
-            Embedding dimension (768 for embeddinggemma-300m)
+            Embedding dimension (384 for granite-embedding-107m-multilingual)
         """
         if not self._initialized or self.model is None:
             return settings.EMBEDDING_DIMENSION  # Return configured dimension
@@ -162,7 +162,7 @@ class EmbeddingService:
             retry_on_error: Whether to retry on error (default True)
             
         Returns:
-            Embedding vector as list of floats (768 dimensions)
+            Embedding vector as list of floats (384 dimensions)
             
         Raises:
             RuntimeError: If service not initialized
@@ -232,7 +232,7 @@ class EmbeddingService:
             show_progress: Show progress bar (default False)
             
         Returns:
-            List of embedding vectors (each is 768-dimensional)
+            List of embedding vectors (each is 384-dimensional)
             
         Raises:
             RuntimeError: If service not initialized

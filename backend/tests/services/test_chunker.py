@@ -18,7 +18,6 @@ from app.models.user import User
 from app.services.processors.chunker import ContentChunker, estimate_chunk_count
 
 
-@pytest.mark.asyncio
 class TestContentChunkerBasics:
     """Test basic ContentChunker functionality."""
     
@@ -64,7 +63,7 @@ class TestYouTubeChunking:
     async def test_youtube_chunking_with_timestamps(self, db_session):
         """Test YouTube chunking with transcript timestamps."""
         # Create dependencies
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_youtube_chunking_with_timestamps@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -127,7 +126,7 @@ class TestYouTubeChunking:
     
     async def test_youtube_chunking_without_timestamps(self, db_session):
         """Test YouTube chunking without timestamps (fallback to sentences)."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_youtube_chunking_without_timestamps@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -183,7 +182,7 @@ class TestRedditChunking:
     
     async def test_reddit_chunking_post_and_comments(self, db_session):
         """Test Reddit chunking with post and comments."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_reddit_chunking_post_and_comments@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -265,7 +264,7 @@ class TestRedditChunking:
     
     async def test_reddit_chunking_long_post(self, db_session):
         """Test Reddit chunking with very long post."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_reddit_chunking_long_post@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -317,7 +316,7 @@ class TestBlogChunking:
     
     async def test_blog_chunking_with_sections(self, db_session):
         """Test blog chunking with markdown sections."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_blog_chunking_with_sections@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -397,7 +396,7 @@ Hooks make React development more enjoyable and productive.
     
     async def test_blog_chunking_without_sections(self, db_session):
         """Test blog chunking without clear sections (fallback to paragraphs)."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_blog_chunking_without_sections@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -450,7 +449,7 @@ class TestGenericChunking:
     
     async def test_generic_chunking(self, db_session):
         """Test generic chunking for unknown content types."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_generic_chunking@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -493,6 +492,54 @@ class TestGenericChunking:
             assert "index" in chunk
             assert "text" in chunk
             assert "metadata" in chunk
+    
+    async def test_extreme_oversized_content(self, db_session):
+        """Test that recursive chunking handles extreme edge cases."""
+        user = User(email="test_extreme@example.com", name="Test User")
+        db_session.add(user)
+        await db_session.flush()
+        
+        channel = Channel(
+            source_type=ContentSourceType.BLOG,
+            source_identifier="extreme",
+            name="Extreme Source"
+        )
+        db_session.add(channel)
+        await db_session.flush()
+        
+        # Create extreme edge cases:
+        # 1. Super long word with no spaces
+        super_long_word = "a" * 1000
+        
+        # 2. Long sentence with no punctuation
+        long_sentence_no_punctuation = " ".join(["word"] * 200)
+        
+        # 3. Mixed content
+        extreme_text = f"{super_long_word} {long_sentence_no_punctuation}. Normal sentence here."
+        
+        content_item = ContentItem(
+            channel_id=channel.id,
+            external_id="extreme_123",
+            title="Extreme Content",
+            content_body=extreme_text,
+            author="Test Author",
+            published_at=datetime.now(timezone.utc)
+        )
+        db_session.add(content_item)
+        await db_session.flush()
+        
+        # Chunk with very small chunk_size to force recursive splitting
+        chunker = ContentChunker(chunk_size=50)
+        chunks = await chunker.chunk_content(content_item)
+        
+        # Should create multiple chunks
+        assert len(chunks) > 1
+        
+        # CRITICAL: Verify NO chunk exceeds the token limit
+        for chunk in chunks:
+            chunk_tokens = chunker.count_tokens(chunk["text"])
+            assert chunk_tokens <= 50, f"Chunk exceeded limit: {chunk_tokens} tokens (max: 50)"
+            assert len(chunk["text"]) > 0, "Empty chunk created"
             assert len(chunk["text"]) > 0
 
 
@@ -502,7 +549,7 @@ class TestChunkerEdgeCases:
     
     async def test_empty_content(self, db_session):
         """Test chunking empty content."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_empty_content@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -533,7 +580,7 @@ class TestChunkerEdgeCases:
     
     async def test_very_short_content(self, db_session):
         """Test chunking very short content."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_very_short_content@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         
@@ -565,7 +612,7 @@ class TestChunkerEdgeCases:
     
     async def test_max_chunks_limit(self, db_session):
         """Test that max_chunks limit is enforced."""
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="test_max_chunks_limit@example.com", name="Test User")
         db_session.add(user)
         await db_session.flush()
         

@@ -27,8 +27,8 @@ from app.services.rag.reranker import CrossEncoderReranker, get_reranker
 def mock_embedder():
     """Mock embedder service."""
     embedder = Mock()
-    embedder.embed_text = AsyncMock(return_value=np.random.rand(768))
-    embedder.embed_texts_batch = AsyncMock(return_value=[np.random.rand(768) for _ in range(3)])
+    embedder.embed_text = AsyncMock(return_value=np.random.rand(384))
+    embedder.embed_texts_batch = AsyncMock(return_value=[np.random.rand(384) for _ in range(3)])
     return embedder
 
 
@@ -80,7 +80,7 @@ async def test_chunks(db_session, test_content_item):
             chunk_index=i,
             chunk_text=f"This is test chunk {i} about React hooks and state management.",
             chunk_metadata={"start_time": i * 30},
-            embedding=np.random.rand(768).tolist(),
+            embedding=np.random.rand(384).tolist(),
             processing_status=ProcessingStatus.PROCESSED
         )
         db_session.add(chunk)
@@ -264,7 +264,7 @@ async def test_hybrid_retriever_semantic_search(db_session, test_chunks):
     
     retriever = HybridRetriever(db_session)
     
-    query_embedding = np.random.rand(768)
+    query_embedding = np.random.rand(384)
     results = await retriever._semantic_search(
         query_embedding,
         top_k=10
@@ -322,7 +322,7 @@ async def test_hybrid_retriever_full_retrieval(db_session, test_chunks):
     
     retriever = HybridRetriever(db_session)
     
-    query_embedding = np.random.rand(768)
+    query_embedding = np.random.rand(384)
     results = await retriever.retrieve(
         query_embedding=query_embedding,
         query_text="React hooks",
@@ -357,7 +357,7 @@ async def test_hybrid_retriever_content_type_filter(db_session, test_chunks):
     
     retriever = HybridRetriever(db_session)
     
-    query_embedding = np.random.rand(768)
+    query_embedding = np.random.rand(384)
     results = await retriever.retrieve(
         query_embedding=query_embedding,
         query_text="React hooks",
@@ -381,7 +381,7 @@ async def test_hybrid_retriever_date_range_filter(db_session, test_chunks):
     
     retriever = HybridRetriever(db_session)
     
-    query_embedding = np.random.rand(768)
+    query_embedding = np.random.rand(384)
     results = await retriever.retrieve(
         query_embedding=query_embedding,
         query_text="React hooks",

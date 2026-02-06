@@ -14,6 +14,14 @@ import logging
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
+# Apply nest_asyncio for testing compatibility
+# This allows asyncio.run() to work even when an event loop is already running
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+except ImportError:
+    pass  # nest_asyncio not available, will fall back to standard behavior
+
 from celery import Task
 from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,27 +43,12 @@ logger = logging.getLogger(__name__)
 
 def run_async(coro):
     """
-    Run async coroutine, handling both event loop and no event loop scenarios.
+    Run async coroutine in a way that works in both production and test environments.
     
-    This helper allows tasks to work in both:
-    - Production (Celery worker with no event loop) - uses asyncio.run()
-    - Tests (pytest with existing event loop) - runs in thread pool
+    nest_asyncio is applied at module level, so asyncio.run() will work
+    even if an event loop is already running (e.g., in pytest).
     """
-    try:
-        # Try to get the current event loop
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # No event loop running - we're in production Celery worker
-        return asyncio.run(coro)
-    else:
-        # Event loop is running - we're probably in tests
-        # Run in a new thread to avoid "loop already running" error
-        import concurrent.futures
-        import threading
-        
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(asyncio.run, coro)
-            return future.result()
+    return asyncio.run(coro)
 
 
 # ========================================

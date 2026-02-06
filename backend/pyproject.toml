@@ -25,6 +25,7 @@ pgvector = "^0.3.5"
 redis = "^5.2.0"
 celery = {extras = ["redis"], version = "^5.4.0"}
 flower = "^2.0.1"
+nest-asyncio = "^1.6.0"
 
 # Authentication 
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
@@ -125,6 +126,7 @@ python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v --cov=app --cov-report=html --cov-report=term-missing"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.mypy]
 python_version = "3.11"

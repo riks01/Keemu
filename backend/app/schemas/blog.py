@@ -7,7 +7,7 @@ These schemas define the request/response structures for blog-related operations
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, ConfigDict
 
 
 # ========================================
@@ -113,6 +113,8 @@ class BlogSubscriptionUpdate(BaseModel):
 class BlogDiscoverResponse(BaseModel):
     """Response schema for RSS feed discovery."""
     
+    model_config = ConfigDict(from_attributes=True)
+
     success: bool = Field(
         ...,
         description="Whether feed discovery was successful"
@@ -192,8 +194,6 @@ class BlogSubscriptionResponse(BaseModel):
         description="Additional blog metadata"
     )
     
-    class Config:
-        from_attributes = True
 
 
 class BlogListResponse(BaseModel):
